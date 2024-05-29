@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:latihan_responsi_plug_e/db/local.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:latihan_responsi_plug_e/models/MealDetailsModel.dart';
 import '../api/api_data_source.dart';
@@ -12,12 +14,69 @@ class MealDetailsPage extends StatefulWidget {
 }
 
 class _MealDetailsState extends State<MealDetailsPage> {
+  bool isFavorite = false;
+  List<dynamic> items = [];
+
+  Future<void> _launchedUrl(String url) async {
+    final Uri _url = Uri.parse(url);
+    if (!await launchUrl(_url)) {
+      throw Exception('Could not launch $_url');
+    }
+  }
+
+  Future<void> _loadItems() async {
+    final source = SaveToLocalDb.getString('favorite');
+    List<dynamic> itemsDb = source == null ? [] : jsonDecode(source);
+    setState(() {
+      items = itemsDb;
+      isFavorite = items.any((item) => item == widget.idMeal);
+    });
+  }
+
+  @override
+  void initState() {
+    _loadItems();
+    super.initState();
+  }
+
+  void _toggleFavorite() async {
+    final mealDetails =
+        await ApiDataSource.instance.loadMealDetails(widget.idMeal);
+    if (mealDetails != null) {
+      setState(() {
+        if (isFavorite) {
+          items.remove(widget.idMeal);
+        } else {
+          items.add(widget.idMeal);
+        }
+        isFavorite = !isFavorite;
+        SaveToLocalDb.setString('favorite', jsonEncode(items));
+      });
+      final snackBar = SnackBar(
+        content:
+            Text(isFavorite ? 'Added to favorites' : 'Removed from favorites'),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: isFavorite ? Colors.green : Colors.red,
+        duration: Duration(seconds: 2),
+      );
+      ScaffoldMessenger.of(context).showSnackBar(snackBar);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('Meal Detail'),
         centerTitle: true,
+        actions: <Widget>[
+          IconButton(
+            onPressed: _toggleFavorite,
+            icon: Icon(
+                isFavorite ? Icons.favorite : Icons.favorite_border_outlined),
+            color: Colors.red,
+          ),
+        ],
       ),
       body: _buildMealDetails(widget.idMeal),
     );
@@ -38,7 +97,7 @@ class _MealDetailsState extends State<MealDetailsPage> {
               MealDetailModel.fromJson(snapshot.data);
           return _buildSuccessSection(mealDetailModel);
         }
-        return _buildErrorSection(); // This handles the case where there's no error, no data, but still no data is available (shouldn't happen usually).
+        return _buildErrorSection();
       },
     );
   }
@@ -153,12 +212,5 @@ class _MealDetailsState extends State<MealDetailsPage> {
       }
     }
     return ingredients;
-  }
-
-  Future<void> _launchedUrl(String url) async {
-    final Uri _url = Uri.parse(url);
-    if (!await launchUrl(_url)) {
-      throw Exception('Could not launch $_url');
-    }
   }
 }
