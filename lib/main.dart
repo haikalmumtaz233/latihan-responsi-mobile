@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:latihan_responsi_plug_e/db/shared_preferences.dart';
+import 'package:latihan_responsi_plug_e/db/local.dart';
 import 'package:latihan_responsi_plug_e/views/main_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await DBHelper().setPreferences();
+  await SaveToLocalDb.init();
   runApp(const MyApp());
 }
 

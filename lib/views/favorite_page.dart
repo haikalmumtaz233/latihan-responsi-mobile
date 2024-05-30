@@ -1,8 +1,10 @@
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:latihan_responsi_plug_e/db/local.dart';
 import 'package:latihan_responsi_plug_e/models/MealsModel.dart';
 import '../api/api_data_source.dart';
+import 'meal_details_page.dart';
 
 class FavoritePage extends StatefulWidget {
   const FavoritePage({Key? key}) : super(key: key);
@@ -21,7 +23,7 @@ class _FavoritePageState extends State<FavoritePage> {
   }
 
   Future<void> _loadItems() async {
-    final source = SaveToLocalDb.getString('favorite');
+    final source = await SaveToLocalDb.getString('favorite');
     if (source != null && source.isNotEmpty) {
       final List<dynamic> itemsDb = jsonDecode(source);
       final List<String> favoriteIds =
@@ -38,7 +40,7 @@ class _FavoritePageState extends State<FavoritePage> {
     for (String mealId in mealIds) {
       final mealDetails = await ApiDataSource.instance.loadMealDetails(mealId);
       if (mealDetails != null) {
-        final Meals meal = Meals.fromJson(mealDetails);
+        final Meals meal = Meals.fromJson(mealDetails['meals'][0]);
         favoriteMeals.add(meal);
       }
     }
@@ -50,7 +52,7 @@ class _FavoritePageState extends State<FavoritePage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Favorites Meals',
+          'Favorite Meals',
           style: TextStyle(
             color: Colors.white,
           ),
@@ -84,8 +86,15 @@ class _FavoritePageState extends State<FavoritePage> {
       ),
       title: Text(meal.strMeal ?? 'Unknown'),
       onTap: () {
-        // Navigate to meal details page or perform other action
+        _navigateToMealDetailPage(meal.idMeal!);
       },
+    );
+  }
+
+  void _navigateToMealDetailPage(String mealId) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => MealDetailsPage(idMeal: mealId)),
     );
   }
 }

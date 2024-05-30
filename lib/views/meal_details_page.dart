@@ -25,12 +25,27 @@ class _MealDetailsState extends State<MealDetailsPage> {
   }
 
   Future<void> _loadItems() async {
-    final source = SaveToLocalDb.getString('favorite');
-    List<dynamic> itemsDb = source == null ? [] : jsonDecode(source);
-    setState(() {
-      items = itemsDb;
-      isFavorite = items.any((item) => item == widget.idMeal);
-    });
+    final source = await SaveToLocalDb.getString('favorite');
+    if (source != null && source.isNotEmpty) {
+      try {
+        List<dynamic> itemsDb = jsonDecode(source);
+        setState(() {
+          items = itemsDb;
+          isFavorite = items.any((item) => item == widget.idMeal);
+        });
+      } catch (e) {
+        print("Error decoding JSON: $e");
+        setState(() {
+          items = [];
+          isFavorite = false;
+        });
+      }
+    } else {
+      setState(() {
+        items = [];
+        isFavorite = false;
+      });
+    }
   }
 
   @override
@@ -123,46 +138,34 @@ class _MealDetailsState extends State<MealDetailsPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Image.network(
-            meal.strMealThumb!,
-            fit: BoxFit.cover,
-          ),
+          Image.network(meal.strMealThumb!, fit: BoxFit.cover),
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  meal.strMeal!,
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                ),
+                Text(meal.strMeal!,
+                    style:
+                        TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
                 SizedBox(height: 8),
-                Text(
-                  "Category: ${meal.strCategory ?? 'N/A'}",
-                  style: TextStyle(fontSize: 16),
-                ),
+                Text("Category: ${meal.strCategory ?? 'N/A'}",
+                    style: TextStyle(fontSize: 16)),
                 SizedBox(height: 8),
-                Text(
-                  "Area: ${meal.strArea ?? 'N/A'}",
-                  style: TextStyle(fontSize: 16),
-                ),
+                Text("Area: ${meal.strArea ?? 'N/A'}",
+                    style: TextStyle(fontSize: 16)),
                 SizedBox(height: 16),
-                Text(
-                  "Ingredients",
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
+                Text("Ingredients",
+                    style:
+                        TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                 SizedBox(height: 8),
                 ..._buildIngredientsList(meal),
                 SizedBox(height: 16),
-                Text(
-                  "Instructions",
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
+                Text("Instructions",
+                    style:
+                        TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                 SizedBox(height: 8),
-                Text(
-                  meal.strInstructions ?? 'N/A',
-                  style: TextStyle(fontSize: 16),
-                ),
+                Text(meal.strInstructions ?? 'N/A',
+                    style: TextStyle(fontSize: 16)),
                 SizedBox(height: 16),
                 if (meal.strYoutube != null)
                   Padding(
@@ -174,15 +177,13 @@ class _MealDetailsState extends State<MealDetailsPage> {
                         icon: Icon(Icons.play_arrow, color: Colors.brown[800]),
                         label: Text("Watch Tutorial",
                             style: TextStyle(
-                              color: Colors.brown[800],
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            )),
+                                color: Colors.brown[800],
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold)),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.brown[50], // background color
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
+                              borderRadius: BorderRadius.circular(20)),
                           padding: EdgeInsets.symmetric(
                               horizontal: 24, vertical: 24),
                         ),
@@ -204,10 +205,8 @@ class _MealDetailsState extends State<MealDetailsPage> {
       String? measure = meal.toJson()['strMeasure$i'];
       if (ingredient != null && ingredient.isNotEmpty) {
         ingredients.add(
-          Text(
-            "$ingredient - ${measure ?? ''}",
-            style: TextStyle(fontSize: 16),
-          ),
+          Text("$ingredient - ${measure ?? ''}",
+              style: TextStyle(fontSize: 16)),
         );
       }
     }
